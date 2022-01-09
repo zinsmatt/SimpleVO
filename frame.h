@@ -22,7 +22,7 @@ public:
     unsigned long keyframe_id_ = 0;
     bool is_keyframe_ = false;
     double timestamp_;
-    SE3 Rt_;
+    SE3 Rt_; // world to camera transform
     std::mutex Rt_mutex;
     cv::Mat left_img_, right_img_;
 

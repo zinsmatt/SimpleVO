@@ -64,6 +64,8 @@ set(THIRD_PARTY_LIBS
 
 add_executable(SimpleVO
 main.cpp
+camera.h
+camera.cpp
 frame.cpp
 frame.h
 feature.cpp
@@ -72,7 +74,10 @@ map_point.cpp
 map_point.h
 map.cpp
 map.h
+frontend.cpp
+frontend.h
 common.h
+g2o_types.h
 )
 
 target_link_libraries(SimpleVO ${THIRD_PARTY_LIBS})
