@@ -78,6 +78,10 @@ frontend.cpp
 frontend.h
 common.h
 g2o_types.h
+visual_odometry.cpp
+visual_odometry.h
+dataset.cpp
+dataset.h
 )
 
 target_link_libraries(SimpleVO ${THIRD_PARTY_LIBS})
