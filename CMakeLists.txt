@@ -82,6 +82,8 @@ visual_odometry.cpp
 visual_odometry.h
 dataset.cpp
 dataset.h
+config.cpp
+config.h
 )
 
 target_link_libraries(SimpleVO ${THIRD_PARTY_LIBS})

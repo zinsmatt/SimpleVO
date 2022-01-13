@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "dataset.h"
 #include "frontend.h"
 #include "map.h"
 
@@ -34,7 +35,7 @@ private:
     // viewer
 
     // dataset
-
+    Dataset::Ptr dataset_ = nullptr;
 };
 
 

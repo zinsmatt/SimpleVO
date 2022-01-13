@@ -7,9 +7,9 @@ namespace vo {
 
 inline bool triangulate(const std::vector<SE3> &poses,
                         const std::vector<Vec3> &points,
-                        Vec3 pw) 
+                        Vec3 &pw) 
 {
-    MatX4 A(2 * poses.size(), 4);
+    MatXX A(2 * poses.size(), 4);
     VecX b(2 * poses.size());
     b.setZero();
     for (size_t i = 0; i < poses.size(); ++i)

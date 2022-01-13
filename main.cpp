@@ -3,7 +3,12 @@
 #include "feature.h"
 #include "frame.h"
 #include "map.h"
+#include "visual_odometry.h"
 
+
+#include <gflags/gflags.h>
+
+DEFINE_string(config_file, "../config/default.yaml", "config file path");
 
 int main(int argc, char *argv[])
 {
@@ -11,15 +16,12 @@ int main(int argc, char *argv[])
     google::InitGoogleLogging(argv[0]);
     google::ParseCommandLineFlags(&argc, &argv, true);
 
-    std::cout << "Simple Visual Odometry\n";
-
-    vo::Frame::Ptr frame = vo::Frame::CreateFrame();
-    vo::Feature feat;
+    std::cout << "Visual Odometry\n";
     
-    vo::Map::Ptr map(new vo::Map);
-    map->insert_keyframe(frame);
-    map->insert_map_point(vo::MapPoint::CreateNewMapPoint());
-    map->clean_map();
+    vo::VisualOdometry::Ptr vo(new vo::VisualOdometry(FLAGS_config_file));
+    assert(vo->init() == true);
+
+    vo->run();
 
     google::ShutdownGoogleLogging();
 

@@ -79,6 +79,7 @@ private:
 
     int num_features_ = 200;
     int num_features_init_ = 100;
+    int min_num_points_init_map = 10;
     int num_features_tracking_ = 50;
     int num_features_tracking_bad_ = 20;
     int num_features_needed_for_keyframe_ = 80;

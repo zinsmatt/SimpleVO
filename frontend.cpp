@@ -15,15 +15,18 @@ namespace vo {
 
     bool Frontend::add_frame(Frame::Ptr frame) {
         current_frame_ = frame;
-
+        LOG(INFO) << "Add new frame status";
         switch (status_) {
             case FrontendStatus::INIT:
+                LOG(INFO) << "status init";
                 stereo_init();
                 break;
             case FrontendStatus::TRACKING_GOOD:
             case FrontendStatus::TRACKING_BAD:
+                LOG(INFO) << "status tracking";
                 track();
             case FrontendStatus::LOST:
+                LOG(INFO) << "status lost";
                 reset();
                 break;
         }
@@ -312,6 +315,7 @@ namespace vo {
     bool Frontend::stereo_init() {
         int nb_features_left = detect_new_features();
         int nb_correspond_right = find_features_in_right();
+
         if (nb_correspond_right < num_features_init_) {
             return false;
         }
@@ -337,7 +341,10 @@ namespace vo {
                 std::vector<Vec3> points({camera_left_->pixel2camera(px_left, 1.0),
                                           camera_right_->pixel2camera(px_right, 1.0)});
                 Vec3 pw = Vec3::Zero();
-                if (triangulate(poses, points, pw) && pw.z() > 0) {
+                bool ret = triangulate(poses, points, pw);
+                // std::cout << "ret triangulatation" << ret << "\n";
+                // std::cout << pw.transpose() << "\n";
+                if (ret && pw.z() > 0) {
                     MapPoint::Ptr new_mp = MapPoint::CreateNewMapPoint();
                     new_mp->set_pos(pw);
                     new_mp->add_observation(current_frame_->features_left_[i]);
@@ -349,6 +356,12 @@ namespace vo {
                 }
             }
         }
+        std::cout << "nb triangulated points " << nb_triangulated_pts << "\n";
+        if (nb_triangulated_pts < min_num_points_init_map) {
+            LOG(INFO) << "Not enough triangulated points " << nb_triangulated_pts;
+            return false;
+        }
+
         current_frame_->set_is_keyframe();
         map_->insert_keyframe(current_frame_);
         // backend->udpate_map();
