@@ -19,17 +19,17 @@ bool VisualOdometry::init() {
     frontend_ = Frontend::Ptr(new Frontend);
     // backend_ = new Backend::Ptr(new Backend);
     map_ = Map::Ptr(new Map);
-    // viewer_ = Viewer::Ptr(new Viewer);
+    viewer_ = Viewer::Ptr(new Viewer);
 
     // frontend_->set_backend(backend_);
     frontend_->set_map(map_);
-    // frontend_->set_viewer(viewer_);
+    frontend_->set_viewer(viewer_);
     frontend_->set_cameras(dataset_->get_camera(0), dataset_->get_camera(1));
 
     // backend_->set_map(map_);
     // backend_->set_cameras(dataset_->get_camera(0), dataset_->get_camera(1));
 
-    // viewer_->set_map(map_);
+    viewer_->set_map(map_);
 
     return true;
 }

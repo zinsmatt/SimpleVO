@@ -1,8 +1,9 @@
 #include "map.h"
 
+#include <iostream>
+
 #include "common.h"
 #include "feature.h"
-
 
 namespace vo {
 
@@ -62,12 +63,14 @@ void Map::remove_old_keyframes() {
         if (mp)
             mp->remove_observation(feat);
     }
+    int i=0;
     for (auto& feat : frame_to_remove->features_right_) {
+        if (!feat) continue;
         auto mp = feat->map_point_.lock();
         if (mp)
             mp->remove_observation(feat);
+        ++i;
     }
-
     clean_map();
 }
 

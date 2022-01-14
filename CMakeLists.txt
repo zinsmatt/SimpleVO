@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 project(SimpleVO)
 
-set(CMAKE_BUILD_TYPE Release)
+# set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "-std=c++17 -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE  "-std=c++11 -O3 -fopenmp -pthread")
+set(CMAKE_CXX_FLAGS_DEBUG  "-g")
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
@@ -84,6 +85,8 @@ dataset.cpp
 dataset.h
 config.cpp
 config.h
+viewer.cpp
+viewer.h
 )
 
 target_link_libraries(SimpleVO ${THIRD_PARTY_LIBS})

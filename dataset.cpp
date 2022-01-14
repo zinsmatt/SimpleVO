@@ -55,11 +55,11 @@ Frame::Ptr Dataset::next_frame() {
     }
 
     // Resize the images (optionnal)
-    // cv::Mat image_left_resized, image_right_resized;
-    // cv::resize(image_left, image_left_resized, cv::Size(), 0.5, 0.5,
+    // cv::Mat img_left_resized, img_right_resized;
+    // cv::resize(img_left, img_left, cv::Size(), 0.5, 0.5,
     //            cv::INTER_NEAREST);
-    // cv::resize(image_right, image_right_resized, cv::Size(), 0.5, 0.5,
-    //            cv::INTER_NEAREST);}
+    // cv::resize(img_right, img_right, cv::Size(), 0.5, 0.5,
+    //            cv::INTER_NEAREST);
 
     auto new_frame = Frame::CreateFrame();
     new_frame->left_img_ = img_left;

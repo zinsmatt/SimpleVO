@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "feature.h"
 #include "g2o_types.h"
+#include "viewer.h"
 
 namespace vo {
 
@@ -15,7 +16,7 @@ namespace vo {
 
     bool Frontend::add_frame(Frame::Ptr frame) {
         current_frame_ = frame;
-        LOG(INFO) << "Add new frame status";
+        LOG(INFO) << "Add new frame:";
         switch (status_) {
             case FrontendStatus::INIT:
                 LOG(INFO) << "status init";
@@ -25,6 +26,7 @@ namespace vo {
             case FrontendStatus::TRACKING_BAD:
                 LOG(INFO) << "status tracking";
                 track();
+                break;
             case FrontendStatus::LOST:
                 LOG(INFO) << "status lost";
                 reset();
@@ -43,9 +45,9 @@ namespace vo {
         int num_track_last = track_last_frame();
         tracking_inliers_ = estimate_current_pose();
 
-        if (tracking_inliers_ > num_features_tracking_) {
+        if (tracking_inliers_ >= num_features_tracking_) {
             status_ = FrontendStatus::TRACKING_GOOD;
-        } else if (tracking_inliers_ > num_features_tracking_bad_) {
+        } else if (tracking_inliers_ >= num_features_tracking_bad_) {
             status_ = FrontendStatus::TRACKING_BAD;
         } else {
             status_ = FrontendStatus::LOST;
@@ -55,8 +57,8 @@ namespace vo {
         relative_motion_ = current_frame_->get_Rt() * last_frame_->get_Rt().inverse();
 
 
-        // if (viewer_)
-        //     viewer_->add_current_frame(current_frame_);
+        if (viewer_)
+            viewer_->add_current_frame(current_frame_);
         
         return true;
     }
@@ -170,7 +172,7 @@ namespace vo {
         }
 
         LOG(INFO) << "Outliers/Inliers in pose estimation : " << nb_outliers 
-                  << " / " << features_with_mp.size();
+                  << " / " << features_with_mp.size() - nb_outliers;
         current_frame_->set_Rt(vertex_pose->estimate());
 
         LOG(INFO) << "Current pose = \n" << current_frame_->get_Rt().matrix();
@@ -205,6 +207,10 @@ namespace vo {
         triangulate_new_points();
 
         // update backend with new mp
+        if (viewer_)
+            viewer_->update_map();
+
+        return true;
 
     }
 
@@ -315,6 +321,28 @@ namespace vo {
     bool Frontend::stereo_init() {
         int nb_features_left = detect_new_features();
         int nb_correspond_right = find_features_in_right();
+
+        std::vector<cv::KeyPoint> kps_left;
+        for (auto& feat : current_frame_->features_left_) {
+            kps_left.push_back(feat->position_);
+        }
+        std::cout << "left ended" << std::endl;
+        std::vector<cv::KeyPoint> kps_right;
+        for (auto& feat : current_frame_->features_right_) {
+            if (feat)
+                kps_right.push_back(feat->position_);
+        }
+        std::cout << "right ended" << std::endl;
+
+        // cv::Mat left_img, right_img;
+        // cv::drawKeypoints(current_frame_->left_img_, kps_left, left_img, {0, 255, 0});
+        // cv::drawKeypoints(current_frame_->right_img_, kps_right, right_img, {0, 255, 0});
+        // std::cout << "draw ended" << std::endl;
+
+        // cv::imshow("build map init left", left_img);
+        // cv::imshow("build map init right", right_img);
+        // cv::waitKey();
+
 
         if (nb_correspond_right < num_features_init_) {
             return false;

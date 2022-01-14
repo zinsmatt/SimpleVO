@@ -6,6 +6,7 @@
 #include "dataset.h"
 #include "frontend.h"
 #include "map.h"
+#include "viewer.h"
 
 namespace vo {
 
@@ -32,7 +33,9 @@ private:
     Frontend::Ptr frontend_ = nullptr;
     Map::Ptr map_ = nullptr;
     // backend
+    
     // viewer
+    Viewer::Ptr viewer_;
 
     // dataset
     Dataset::Ptr dataset_ = nullptr;

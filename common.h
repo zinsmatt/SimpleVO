@@ -19,6 +19,7 @@ typedef Sophus::SO3d SO3;
 
 #include <glog/logging.h>
 
+#include <opencv2/opencv.hpp>
 
 
 #endif // COMMON_H

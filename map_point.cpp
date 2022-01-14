@@ -1,5 +1,6 @@
 #include "map_point.h"
 
+#include <iostream>
 #include "feature.h"
 
 namespace vo {
