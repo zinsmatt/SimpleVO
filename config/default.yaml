@@ -1,14 +1,19 @@
 %YAML:1.0
 # data
-# the tum dataset directory, change it to yours! 
-dataset_dir: /media/mzins/DATA1/Kitti/data_odometry_gray/dataset/sequences/00
+# dataset_dir: /media/mzins/DATA1/Kitti/data_odometry_gray/dataset/sequences/00
+dataset_dir: /media/mzins/DATA1/7-Scenes/chess/seq-01
+# dataset_dir: /media/mzins/DATA1/7-Scenes/office/seq-01
+# dataset_dir: /media/mzins/DATA1/7-Scenes/redkitchen/seq-01
 
-# camera intrinsics
-camera.fx: 517.3
-camera.fy: 516.5
-camera.cx: 325.1
-camera.cy: 249.7
+# mode: stereo
+mode: depth
 
-num_features: 150
-num_features_init: 50
+num_features: 200
+num_features_init: 100
 num_features_tracking: 50
+num_features_tracking_bad: 20
+min_num_points_init_map: 10
+num_features_needed_for_keyframe: 80
+
+# viewer_camera_size: 1.0
+viewer_camera_size: 0.2

@@ -21,5 +21,6 @@ typedef Sophus::SO3d SO3;
 
 #include <opencv2/opencv.hpp>
 
+#include <iostream>
 
 #endif // COMMON_H

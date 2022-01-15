@@ -1,6 +1,7 @@
 #include "viewer.h"
 
 #include "common.h"
+#include "config.h"
 #include "feature.h"
 
 namespace vo {
@@ -13,6 +14,7 @@ namespace vo {
     void Viewer::close() {
         is_running_ = false;
         thread_.join();
+        std::cout << "close " << std::endl;
     }
 
     void Viewer::add_current_frame(Frame::Ptr frame) {
@@ -90,7 +92,7 @@ namespace vo {
 
     void Viewer::draw_frame(Frame::Ptr frame, const float* color) {
         SE3 cam_pose = frame->get_Rt().inverse();
-        const float sz = 1.0;
+        const float sz = Config::Get<double>("viewer_camera_size");
         const int line_width = 2.0;
         const float fx = 400;
         const float fy = 400;

@@ -13,10 +13,20 @@ bool VisualOdometry::init() {
         return false;
     }
 
-    dataset_ = Dataset::Ptr(new Dataset(Config::Get<std::string>("dataset_dir")));
+    std::string mode = Config::Get<std::string>("mode");
+    if (mode == "stereo") {
+        dataset_ = DatasetBase::Ptr(new DatasetKITTI(Config::Get<std::string>("dataset_dir")));
+    } else if (mode == "depth") {
+        dataset_ = DatasetBase::Ptr(new Dataset7Scenes(Config::Get<std::string>("dataset_dir")));
+    } else {
+        LOG(ERROR) << "Invalid mode: " << mode;
+        return false;
+    }
+
     CHECK_EQ(dataset_->init(), true);
 
     frontend_ = Frontend::Ptr(new Frontend);
+
     // backend_ = new Backend::Ptr(new Backend);
     map_ = Map::Ptr(new Map);
     viewer_ = Viewer::Ptr(new Viewer);
@@ -40,6 +50,9 @@ void VisualOdometry::run() {
         if (step() == false)
             break;
     }
+    //backend stop
+    viewer_->close();
+    LOG(INFO) << "VO exit.";
 }
 
 bool VisualOdometry::step() {

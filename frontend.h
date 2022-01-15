@@ -60,6 +60,10 @@ private:
 
     void set_observations_for_keyframe();
 
+    int create_new_points_from_depth();
+    bool depth_init();
+    bool build_init_map_depth();
+
 
 
 private:
@@ -79,10 +83,12 @@ private:
 
     int num_features_ = 200;
     int num_features_init_ = 100;
-    int min_num_points_init_map = 10;
+    int min_num_points_init_map_ = 10;
     int num_features_tracking_ = 50;
     int num_features_tracking_bad_ = 20;
     int num_features_needed_for_keyframe_ = 80;
+
+    bool is_stereo_ = true;
 
     cv::Ptr<cv::GFTTDetector> gftt_;
 };

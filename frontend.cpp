@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "algorithm.h"
+#include "config.h"
 #include "camera.h"
 #include "feature.h"
 #include "g2o_types.h"
@@ -11,6 +12,15 @@
 namespace vo {
 
     Frontend::Frontend() {
+        // Read configuration
+        is_stereo_ = Config::Get<std::string>("mode") == "stereo";
+        num_features_ = Config::Get<double>("num_features");
+        num_features_init_ = Config::Get<double>("num_features_init");
+        min_num_points_init_map_ = Config::Get<double>("min_num_points_init_map");
+        num_features_tracking_ = Config::Get<double>("num_features_tracking");
+        num_features_tracking_bad_ = Config::Get<double>("num_features_tracking_bad");
+        num_features_needed_for_keyframe_ = Config::Get<double>("num_features_needed_for_keyframe");
+
         gftt_ = cv::GFTTDetector::create(num_features_, 0.01, 20);        
     }
 
@@ -20,7 +30,11 @@ namespace vo {
         switch (status_) {
             case FrontendStatus::INIT:
                 LOG(INFO) << "status init";
-                stereo_init();
+                if (is_stereo_) {
+                    stereo_init();
+                } else {
+                    depth_init();
+                }
                 break;
             case FrontendStatus::TRACKING_GOOD:
             case FrontendStatus::TRACKING_BAD:
@@ -198,14 +212,19 @@ namespace vo {
         map_->insert_keyframe(current_frame_);
         LOG(INFO) << "Set frame " << current_frame_->id_ << " as keyframe "
                   << current_frame_->keyframe_id_ << "\n";
+
         set_observations_for_keyframe();
 
         detect_new_features();
 
-        find_features_in_right();
+        if (is_stereo_) {
+            find_features_in_right();
+            triangulate_new_points();
+        } else {
+            create_new_points_from_depth();
+        }
 
-        triangulate_new_points();
-
+        
         // update backend with new mp
         if (viewer_)
             viewer_->update_map();
@@ -322,17 +341,17 @@ namespace vo {
         int nb_features_left = detect_new_features();
         int nb_correspond_right = find_features_in_right();
 
-        std::vector<cv::KeyPoint> kps_left;
-        for (auto& feat : current_frame_->features_left_) {
-            kps_left.push_back(feat->position_);
-        }
-        std::cout << "left ended" << std::endl;
-        std::vector<cv::KeyPoint> kps_right;
-        for (auto& feat : current_frame_->features_right_) {
-            if (feat)
-                kps_right.push_back(feat->position_);
-        }
-        std::cout << "right ended" << std::endl;
+        // std::vector<cv::KeyPoint> kps_left;
+        // for (auto& feat : current_frame_->features_left_) {
+        //     kps_left.push_back(feat->position_);
+        // }
+        // std::cout << "left ended" << std::endl;
+        // std::vector<cv::KeyPoint> kps_right;
+        // for (auto& feat : current_frame_->features_right_) {
+        //     if (feat)
+        //         kps_right.push_back(feat->position_);
+        // }
+        // std::cout << "right ended" << std::endl;
 
         // cv::Mat left_img, right_img;
         // cv::drawKeypoints(current_frame_->left_img_, kps_left, left_img, {0, 255, 0});
@@ -385,7 +404,7 @@ namespace vo {
             }
         }
         std::cout << "nb triangulated points " << nb_triangulated_pts << "\n";
-        if (nb_triangulated_pts < min_num_points_init_map) {
+        if (nb_triangulated_pts < min_num_points_init_map_) {
             LOG(INFO) << "Not enough triangulated points " << nb_triangulated_pts;
             return false;
         }
@@ -404,6 +423,85 @@ namespace vo {
     }
 
 
+
+    double get_depth_bilinear_interpolated_value(const cv::Mat &img, const Vec2 &pt) {
+        int x = pt.x();
+        int y = pt.y();
+        unsigned short int a = img.at<unsigned short int>(y, x);
+        unsigned short int b = img.at<unsigned short int>(y, x+1);
+        unsigned short int c = img.at<unsigned short int>(y+1, x);
+        unsigned short int d = img.at<unsigned short int>(y+1, x+1);
+        if (a == 65535 || b == 65535 || c == 65535 || d == 65535) 
+            return std::numeric_limits<double>::infinity();
+        double xx = pt[0] - floor(pt[0]);
+        double yy = pt[1] - floor(pt[1]);
+        return ((1 - xx) * (1 - yy) * double(a) +
+                xx * (1 - yy) * double(b) +
+                (1 - xx) * yy * double(c) +
+                xx * yy * double(d)) / 1000.0;
+    }
+
+    int Frontend::create_new_points_from_depth() {
+        SE3 current_pose_Twc = current_frame_->get_Rt().inverse();
+        int nb_reconstructed_pts = 0;
+
+        for (size_t i = 0; i < current_frame_->features_left_.size(); ++i) {
+            Vec2 p(current_frame_->features_left_[i]->position_.pt.x,
+                   current_frame_->features_left_[i]->position_.pt.y);
+
+            Vec3 pn = camera_left_->pixel2camera(p, 1.0);
+            Vec3 pn_depth = camera_right_->pose() * pn;
+            Vec2 px_depth = camera_right_->camera2pixel(pn_depth);
+            double depth = get_depth_bilinear_interpolated_value(current_frame_->right_img_, px_depth);
+
+            if (depth < std::numeric_limits<double>::infinity() && 
+                current_frame_->features_left_[i]->map_point_.expired()) {
+                pn *= depth;
+                
+                MapPoint::Ptr new_mp = MapPoint::CreateNewMapPoint();
+                new_mp->set_pos(current_pose_Twc * pn);
+                new_mp->add_observation(current_frame_->features_left_[i]);
+
+                current_frame_->features_left_[i]->map_point_ = new_mp;
+                map_->insert_map_point(new_mp);
+                ++nb_reconstructed_pts;
+            }
+        }
+        LOG(INFO) << "New " << nb_reconstructed_pts << " reconstructed points";
+        return nb_reconstructed_pts;
+    }
+
+
+    bool Frontend::depth_init() {
+        int nb_features_left = detect_new_features();
+
+        if (nb_features_left < num_features_init_) {
+            return false;
+        }
+
+        bool build_map_success = build_init_map_depth();
+        if (build_map_success) {
+            status_ = FrontendStatus::TRACKING_GOOD;
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Frontend::build_init_map_depth() {
+        int nb_reconstructed_pts = create_new_points_from_depth();
+
+        if (nb_reconstructed_pts < min_num_points_init_map_) {
+            LOG(INFO) << "Not enough reconstructed points " << nb_reconstructed_pts;
+            return false;
+        }
+        current_frame_->set_is_keyframe();
+        map_->insert_keyframe(current_frame_);
+        // backend->udpate_map();
+
+        LOG(INFO) << "Initial map created with " << nb_reconstructed_pts << " points.";
+        return true;
+    }
 
 
 }

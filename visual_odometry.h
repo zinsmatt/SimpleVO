@@ -38,7 +38,7 @@ private:
     Viewer::Ptr viewer_;
 
     // dataset
-    Dataset::Ptr dataset_ = nullptr;
+    DatasetBase::Ptr dataset_ = nullptr;
 };
 
 

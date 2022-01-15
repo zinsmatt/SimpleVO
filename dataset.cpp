@@ -8,10 +8,53 @@
 
 namespace vo {
 
+Dataset7Scenes::Dataset7Scenes(const std::string& path) : path_(path) {}
 
-Dataset::Dataset(const std::string& path) : path_(path) {}
+bool Dataset7Scenes::init() {
+    Camera::Ptr rgb_cam(new Camera(532.57, 531.54, 320.0, 240.0, 0.0, SE3(SO3(), Vec3::Zero())));
+    Vec3 t_depth_rgb(0.02344903, 0.00617666, 0.01052531);
+    Camera::Ptr depth_cam(new Camera(598.836, 587.618669, 320.0, 240.0, 0.0, SE3(SO3(), t_depth_rgb)));
+    cameras_.push_back(rgb_cam);
+    cameras_.push_back(depth_cam);
 
-bool Dataset::init() {
+    current_image_index_ = 0;
+    return true;
+}
+
+Frame::Ptr Dataset7Scenes::next_frame() {
+
+    boost::format fmt_rgb("%s/frame-%06d.color.png");
+    boost::format fmt_depth("%s/frame-%06d.depth.png");
+    cv::Mat img_left, img_right;
+    img_left = cv::imread((fmt_rgb % path_ % current_image_index_).str(), cv::IMREAD_GRAYSCALE);
+    img_right = cv::imread((fmt_depth % path_ % current_image_index_).str(), cv::IMREAD_UNCHANGED);
+
+    if (img_left.data == nullptr || img_right.data == nullptr) {
+        LOG(WARNING) << "Cannot find images at index " << current_image_index_;
+        return nullptr;
+    }
+
+    // Resize the images (optionnal)
+    // cv::Mat img_left_resized, img_right_resized;
+    // cv::resize(img_left, img_left, cv::Size(), 0.5, 0.5,
+    //            cv::INTER_NEAREST);
+    // cv::resize(img_right, img_right, cv::Size(), 0.5, 0.5,
+    //            cv::INTER_NEAREST);
+
+    auto new_frame = Frame::CreateFrame();
+    new_frame->left_img_ = img_left;
+    new_frame->right_img_ = img_right;
+    ++current_image_index_;
+    return new_frame;
+}
+
+
+
+
+
+DatasetKITTI::DatasetKITTI(const std::string& path) : path_(path) {}
+
+bool DatasetKITTI::init() {
     std::ifstream fin(path_ + "/calib.txt");
     if (!fin) {
         LOG(ERROR) << "Cannot find " << path_ << "/calib.txt";
@@ -43,7 +86,7 @@ bool Dataset::init() {
     return true;
 }
 
-Frame::Ptr Dataset::next_frame() {
+Frame::Ptr DatasetKITTI::next_frame() {
     boost::format fmt("%s/image_%d/%06d.png");
     cv::Mat img_left, img_right;
     img_left = cv::imread((fmt % path_ % 0 % current_image_index_).str(), cv::IMREAD_GRAYSCALE);
